@@ -638,5 +638,115 @@
   
   window.onload = () => { buildKeyboard(); };
 </script>
+
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAK0j8zD1iOPjqrS0mCMv1qHg15EhFU4hg",
+    authDomain: "qq-music-f9595.firebaseapp.com",
+    projectId: "qq-music-f9595",
+    storageBucket: "qq-music-f9595.firebasestorage.app",
+    messagingSenderId: "173581457193",
+    appId: "1:173581457193:web:9f7cdbc006f6be63c7c938"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // Optional: allow quick testing from DevTools Console
+  window.firebaseLogin = async () => {
+    await signInWithPopup(auth, provider);
+  };
+  window.firebaseLogout = async () => {
+    await signOut(auth);
+  };
+
+  // Lock/unlock Suno upload UI based on auth state (does not change your existing logic)
+  const sunoBox = document.getElementById("sunoUploadBox");
+  const sunoInput = document.getElementById("sunoUpload");
+
+  function lockSuno(locked) {
+    if (!sunoBox || !sunoInput) return;
+    if (locked) {
+      sunoBox.classList.add("disabled");
+      sunoBox.style.pointerEvents = "none";
+      sunoInput.disabled = true;
+      sunoBox.textContent = "🔒 請先用 Google 登入才能使用 Suno";
+    } else {
+      sunoBox.classList.remove("disabled");
+      sunoBox.style.pointerEvents = "auto";
+      sunoInput.disabled = false;
+      sunoBox.textContent = "🎵 Suno AI Separate (Local)";
+    }
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    window.__AUTH_USER__ = user || null;
+    lockSuno(!user);
+  });
+</script>
+
+
+
+<!-- Firebase Auth Floating Button (added; does not modify existing features) -->
+<button id="authBtn" type="button" aria-label="Login/Logout" style="
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(168,85,247,0.6);
+  background: rgba(17,17,17,0.9);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(168,85,247,0.25);
+  backdrop-filter: blur(6px);
+">
+  🔐 Login
+</button>
+
+<script>
+  (function () {
+    const btn = document.getElementById('authBtn');
+    if (!btn) return;
+
+    function setLoggedIn(isIn) {
+      btn.textContent = isIn ? '👤 Logout' : '🔐 Login';
+    }
+
+    // initial state (window.__AUTH_USER__ is set by the Firebase module script)
+    setLoggedIn(!!window.__AUTH_USER__);
+
+    btn.addEventListener('click', async () => {
+      try {
+        if (window.__AUTH_USER__) {
+          if (typeof window.firebaseLogout === 'function') await window.firebaseLogout();
+        } else {
+          if (typeof window.firebaseLogin === 'function') await window.firebaseLogin();
+        }
+      } catch (e) {
+        alert('登入/登出失敗：' + (e && e.message ? e.message : e));
+      }
+    });
+
+    // Keep in sync (Firebase script updates window.__AUTH_USER__ in onAuthStateChanged)
+    // Poll lightly without touching your existing code.
+    let last = !!window.__AUTH_USER__;
+    setInterval(() => {
+      const cur = !!window.__AUTH_USER__;
+      if (cur !== last) {
+        last = cur;
+        setLoggedIn(cur);
+      }
+    }, 500);
+  })();
+</script>
+
 </body>
 </html>
