@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Qq Music - Pro Soloist v56 (Suno Edition)</title>
+  <style>
+    /* --- 核心變數 (保留) --- */
+    :root {
+      --bg: #000000;
+      --panel: #111111;
+      --accent: #a855f7;
+      --accent-glow: 0 0 15px var(--accent);
+      --text: #ffffff;
+      --lcd-bg: #0a0015;
+      --lcd-border: 2px solid var(--accent);
+      --key-white-bg: linear-gradient(to bottom, #f0f0f0 0%, #ffffff 100%);
+      --key-black-bg: linear-gradient(to bottom, #444 0%, #000 100%);
+      --border-radius: 12px;
+      --font-family: "Orbitron", "Segoe UI", sans-serif;
+      --white-w: 52px; 
+      --black-w: 34px; 
+      --octave-active-bg: #2a0044;
+      --guide-color: #d946ef;
+      --beam-vocal: #b026ff;
+      --beam-backing: #00ffff;
+    }
+
+    /* --- 主題 (保留) --- */
+    body.theme-cartoon { --bg: #87CEEB; --panel: #FFD700; --accent: #FF4500; --accent-glow: 4px 4px 0px rgba(0,0,0,0.2); --text: #000000; --lcd-bg: #FFFFFF; --lcd-border: 4px solid #FF4500; --key-white-bg: linear-gradient(to bottom, #ffffff 0%, #f0f8ff 100%); --key-black-bg: linear-gradient(to bottom, #333 0%, #333 100%); --border-radius: 25px; --font-family: "Comic Sans MS", cursive; }
+    body.theme-pro { --bg: #1a1a1a; --panel: #2c2c2c; --accent: #d4d4d4; --accent-glow: none; --text: #f0f0f0; --lcd-bg: #111; --lcd-border: 1px solid #555; --key-white-bg: linear-gradient(to bottom, #fffff0 0%, #ffffff 100%); --key-black-bg: linear-gradient(to bottom, #1a1a1a 0%, #000 100%); --border-radius: 2px; --font-family: "Times New Roman", serif; }
+    body.theme-nature { --bg: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%); --panel: #e6cca0; --accent: #006994; --accent-glow: 0 0 5px rgba(255,255,255,0.5); --text: #00334e; --lcd-bg: rgba(255,255,255,0.6); --lcd-border: 2px solid #006994; --key-white-bg: linear-gradient(to bottom, #f0faff 0%, #ffffff 100%); --key-black-bg: linear-gradient(to bottom, #006994 0%, #00334e 100%); --border-radius: 12px; --font-family: "Georgia", serif; }
+
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-family); min-height: 100vh; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; transition: background 0.8s ease, color 0.3s ease; background-attachment: fixed; }
+
+    #themeModal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: flex !important; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .modal-title { font-size: 40px; font-weight: 900; color: white; margin-bottom: 30px; text-align: center; text-shadow: 0 0 15px #a855f7; }
+    .theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 800px; width: 100%; }
+    .theme-card { background: #222; border: 3px solid #444; border-radius: 15px; padding: 35px 20px; text-align: center; cursor: pointer; transition: 0.3s; font-size: 28px; font-weight: 900; color: #ffffff !important; text-shadow: 2px 2px 0px #000, 0 0 15px rgba(255,255,255,0.3); box-shadow: 0 5px 15px rgba(0,0,0,0.5); letter-spacing: 1px; }
+    .theme-card:hover { transform: translateY(-5px); border-color: #fff; box-shadow: 0 10px 25px rgba(255,255,255,0.2); background: #333; }
+    
+    header { min-height: 120px; background: var(--panel); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 2px solid rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
+    .brand { font-size: 40px; font-weight: 900; letter-spacing: -2px; text-shadow: var(--accent-glow); color: var(--text); }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+
+    .mode-btn, .display-btn { font-size: 18px; cursor: pointer; color: var(--text); opacity: 0.8; border: 1px solid var(--text); padding: 8px 15px; border-radius: var(--border-radius); font-weight: bold; transition: 0.2s; background: transparent; }
+    .mode-btn.active, .display-btn.active { opacity: 1; background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--accent-glow); transform: scale(1.05); }
+    .theme-switch-btn { font-size: 14px; background: rgba(255,255,255,0.1); border: 1px solid var(--text); color: var(--text); padding: 5px 10px; border-radius: var(--border-radius); cursor: pointer; }
+
+    .metro-controls { display: flex; flex-direction: column; align-items: center; gap: 5px; border-left: 1px solid var(--text); padding-left: 15px; }
+    .bpm-slider { width: 100px; accent-color: var(--accent); cursor: pointer; }
+    .bpm-text { font-size: 12px; color: var(--accent); font-weight: bold; }
+
+    .vol-stack { display: flex; flex-direction: column; align-items: center; }
+    .vol-label { font-size: 30px; color: var(--text); opacity: 0.7; font-weight: bold; margin-bottom: 5px; }
+    .vol-grid { display: flex; gap: 5px; }
+    .vol-segment { width: 25px; height: 14px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); cursor: pointer; }
+    .vol-segment.active { background: var(--accent); box-shadow: var(--accent-glow); border-color: var(--accent); }
+
+    .score-rack { width: 100%; min-height: 0; background: rgba(0,0,0,0.2); display: none; flex-direction: column; align-items: center; justify-content: flex-start; gap: 20px; border-bottom: 2px solid rgba(0,0,0,0.2); padding: 15px; transition: 0.5s; overflow-y: auto; max-height: 40vh; }
+    #scoreDisplay { width: 100%; display: flex; justify-content: center; margin-top: 15px; }
+    #scoreDisplay img { max-width: 90%; border: 2px solid var(--accent); box-shadow: var(--accent-glow); border-radius: 8px; }
+    
+    .upload-group { display: flex; flex-direction: column; gap: 10px; flex: 1; max-width: 600px; width: 100%; }
+    .upload-hint { border: 2px dashed var(--accent); padding: 20px; color: var(--text); opacity: 0.7; cursor: pointer; border-radius: var(--border-radius); text-align: center; font-size: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; transition: 0.3s; }
+    .upload-hint:hover { background: rgba(168, 85, 247, 0.1); border-color: #fff; }
+    .upload-hint.disabled { pointer-events: none; opacity: 0.3; border-style: solid; }
+    
+    .suno-ctrl-bar { display: none; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+    .suno-btn { padding: 10px 20px; border: 2px solid var(--accent); background: transparent; color: var(--text); border-radius: var(--border-radius); cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; }
+    .suno-btn.active { background: var(--accent); color: white; box-shadow: var(--accent-glow); }
+    .suno-btn:hover:not(:disabled) { background: rgba(168, 85, 247, 0.2); }
+    .suno-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .piano-section { padding: 20px 0; display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .lcd-tech { width: 440px; height: 180px; background: var(--lcd-bg); border: var(--lcd-border); border-radius: var(--border-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; transition: 0.4s ease; padding: 10px; }
+    .metro-light { width: 15px; height: 15px; background: rgba(0,0,0,0.3); border-radius: 50%; margin-bottom: 5px; border: 2px solid var(--text); }
+    .metro-flash { background: #fff !important; box-shadow: 0 0 15px #fff; }
+    
+    #shiftIndicator { position: absolute; top: 10px; right: 15px; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #333; color: #555; border: 1px solid #555; font-weight: bold; }
+    #shiftIndicator.active { background: var(--accent); color: #fff; border-color: #fff; }
+    #octaveDisplay { position: absolute; top: 10px; left: 15px; font-size: 12px; color: var(--accent); font-weight: bold; }
+    #noteOut { font-size: 28px; font-weight: bold; color: var(--text); margin: 5px 0; text-align: center; width: 90%; overflow: hidden; white-space: nowrap; }
+
+    .seek-container { width: 90%; margin-top: 5px; display: flex; align-items: center; gap: 8px; opacity: 0.5; pointer-events: none; }
+    .seek-container.active { opacity: 1; pointer-events: auto; }
+    .seek-slider { flex: 1; accent-color: var(--accent); cursor: pointer; height: 4px; }
+    .time-text { font-size: 10px; color: var(--accent); font-family: monospace; min-width: 35px; }
+
+    .piano-scroll { width: 100%; overflow-x: auto; padding: 10px 0; scroll-behavior: smooth; }
+    .keyboard { position: relative; width: max-content; height: 260px; margin: 0 auto; }
+    .white-keys { display: flex; }
+    .key-white { width: var(--white-w); height: 240px; background: var(--key-white-bg); border: 1px solid #999; border-radius: 0 0 5px 5px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 12px; color: #000; cursor: pointer; position: relative; }
+    .key-white.active { transform: translateY(2px); border-bottom: 10px solid var(--accent); filter: brightness(0.9); }
+    .black-keys { position: absolute; top: 0; left: 0; width: 100%; height: 150px; pointer-events: none; }
+    .key-black { position: absolute; width: var(--black-w); height: 150px; background: var(--key-black-bg); border-radius: 0 0 4px 4px; pointer-events: auto; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 10px; color: #fff; cursor: pointer; }
+    .key-black.active { transform: translateY(2px); border-bottom: 8px solid var(--accent); filter: brightness(1.2); }
+    .key-tag { font-size: 11px; font-weight: bold; pointer-events: none; margin-bottom: 2px; }
+    .octave-active { background: var(--octave-active-bg) !important; box-shadow: inset 0 0 20px var(--accent); }
+    
+    .guide-vocal { box-shadow: inset 0 0 25px var(--beam-vocal); border-bottom: 10px solid var(--beam-vocal) !important; transition: box-shadow 0.1s, border-bottom 0.1s; }
+    .guide-backing { box-shadow: inset 0 0 25px var(--beam-backing); border-bottom: 10px solid var(--beam-backing) !important; transition: box-shadow 0.1s, border-bottom 0.1s; }
+    
+    .hide-tags .key-tag { display: none; }
+    .inst-control { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-left: 10px; }
+    .inst-label { font-size: 30px; font-weight: bold; color: var(--accent); }
+
+    .server-status { position: absolute; top: 35px; left: 15px; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: #333; color: #888; border: 1px solid #555; font-weight: bold; }
+    .server-status.online { background: #0a4; color: #0f0; border-color: #0f0; }
+  </style>
+</head>
+<body class="theme-tech show-labels">
+  
+  <div id="themeModal">
+    <div class="modal-title">Select Your Piano Style</div>
+    <div class="theme-grid">
+      <div class="theme-card card-cartoon" onclick="selectTheme('theme-cartoon')">🌈 Cartoon</div>
+      <div class="theme-card card-tech" onclick="selectTheme('theme-tech')">⚡ Cyberpunk</div>
+      <div class="theme-card card-pro" onclick="selectTheme('theme-pro')">🎹 Classic Pro</div>
+      <div class="theme-card card-nature" onclick="selectTheme('theme-nature')">🌊 Ocean Breeze</div>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">Qq Music</div>
+    <div class="header-right">
+      <button class="theme-switch-btn" onclick="openThemeModal()">🎨 Theme</button>
+      <div id="scoreBtn" class="mode-btn" onclick="toggleScore()">Score</div>
+      <div id="sunoBtn" class="mode-btn" onclick="toggleSuno()">Suno</div>
+      <div class="metro-controls">
+        <div id="metroBtn" class="mode-btn" onclick="toggleMetro()">Metro</div>
+        <input type="range" class="bpm-slider" min="40" max="220" value="120" oninput="updateBPM(this.value)">
+        <span class="bpm-text" id="bpmText">120 BPM</span>
+      </div>
+      <div class="vol-stack">
+        <div class="vol-label">Volume</div>
+        <div class="vol-grid">
+          <div class="vol-segment" id="vol1" onclick="setVol(1)"></div>
+          <div class="vol-segment" id="vol2" onclick="setVol(2)"></div>
+          <div class="vol-segment active" id="vol3" onclick="setVol(3)"></div>
+          <div class="vol-segment" id="vol4" onclick="setVol(4)"></div>
+        </div>
+      </div>
+      <div id="dToggle" class="display-btn active" onclick="toggleDisplay()">Pitch Name</div>
+      <div class="inst-control">
+        <div class="inst-label">INSTRUMENT</div>
+        <select id="instSelect" onchange="changeInstrument()" style="padding:5px; background:transparent; color:var(--text); border:1px solid var(--text); border-radius:4px; font-size: 20px; font-family: inherit;">
+          <option value="piano">Piano 🎹</option>
+          <option value="violin">Violin 🎻</option>
+          <option value="strings">Strings 🎻</option>
+          <option value="flute">Flute 🪈</option>
+          <option value="guitar">Guitar 🎸</option>
+        </select>
+      </div>
+      <label style="font-size:12px; margin-left:10px; cursor:pointer; color:var(--text);"><input type="checkbox" id="sustainCheck" checked> Sus</label>
+    </div>
+  </header>
+
+  <!-- 樂譜面板 (Score Stream) -->
+  <div class="score-rack" id="scorePanel">
+    <div class="upload-group">
+        <div id="scoreUploadBox" class="upload-hint" onclick="document.getElementById('scoreUpload').click()">📷 Upload Score (IMG/PDF)</div>
+        <input type="file" id="scoreUpload" accept="image/*,application/pdf" style="display:none;">
+        <div id="scoreCtrlBar" style="display:none; gap:10px; justify-content:center; margin-top:10px;">
+            <button class="suno-btn" style="border-color:#ff4444; color:#ff4444;" onclick="resetScore()">🗑 DELETE SCORE</button>
+        </div>
+    </div>
+    <div id="scoreDisplay" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+  </div>
+
+  <!-- Suno 面板 (Suno Stream) -->
+  <div class="score-rack" id="sunoPanel">
+    <div class="upload-group">
+        <div id="sunoUploadBox" class="upload-hint" onclick="document.getElementById('sunoUpload').click()">🎵 Suno AI Separate (Local)</div>
+        <input type="file" id="sunoUpload" accept="audio/*" hidden>
+        <div id="sunoCtrlBar" class="suno-ctrl-bar">
+            <button class="suno-btn" style="border-color:#ff4444; color:#ff4444;" onclick="resetSuno()">🗑 RESET</button>
+            <button id="btnMix" class="suno-btn active" onclick="setMixMode('mix')">Mix (Assemble)</button>
+            <button id="btnVoc" class="suno-btn" onclick="setMixMode('voc')">Vocal</button>
+            <button id="btnBack" class="suno-btn" onclick="setMixMode('back')">Backing Track</button>
+            <button id="btnPlay" class="suno-btn" onclick="toggleSunoPlayback()">⏯ Play/Pause</button>
+            <button id="btnStop" class="suno-btn" onclick="stopSuno()">⏹ Stop</button>
+        </div>
+    </div>
+  </div>
+
+  <div class="piano-section">
+    <div class="lcd-tech" id="lcd">
+      <div id="serverStatus" class="server-status">SERVER: ?</div>
+      <div id="octaveDisplay">OCT: OFF</div>
+      <div id="shiftIndicator">SHIFT MOD</div>
+      <div id="metroLight" class="metro-light"></div>
+      <div id="noteOut">READY</div>
+      <div class="seek-container" id="seekBarUi">
+        <span class="time-text" id="tCurr">0:00</span>
+        <input type="range" id="seekSlider" class="seek-slider" min="0" max="100" value="0" disabled>
+        <span class="time-text" id="tTotal">0:00</span>
+      </div>
+    </div>
+    <div class="piano-scroll">
+      <div class="keyboard" id="kbRoot">
+        <div class="white-keys" id="whiteKeys"></div>
+        <div class="black-keys" id="blackKeys"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="instrument-display">
+    <div id="instIcon" style="font-size:100px;">🎹</div>
+  </div>
+
+<script type="module">
+  // ==========================================
+  // 核心狀態與基礎 UI (The Foundation)
+  // ==========================================
+  const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const LETTER_MAP = { 'c':0, 'd':2, 'e':4, 'f':5, 'g':7, 'a':9, 'b':11 };
+  const API_URL = 'http://localhost:5000'; // 🔥 Spleeter API 端點
+  
+  let aCtx, masterGain, reverbNode;
+  let metroOn = false, bpm = 120, metroTimer;
+  const activeOctaves = new Set();
+  const currentlyPressedNotes = new Set();
+  let chordTimeout = null;
+  let isAIProcessing = false;
+  let serverOnline = false;
+
+  // ==========================================
+  // 1. 樂譜流 (Score Stream - PROTECTED)
+  // ==========================================
+  window.loadScore = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const display = document.getElementById('scoreDisplay');
+    display.innerHTML = '';
+    
+    if (file.type === 'application/pdf') {
+      const url = URL.createObjectURL(file);
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.style.width = '95%';
+      iframe.style.height = '600px';
+      iframe.style.border = '2px solid var(--accent)';
+      iframe.style.boxShadow = 'var(--accent-glow)';
+      iframe.style.borderRadius = '8px';
+      iframe.style.marginTop = '15px';
+      display.appendChild(iframe);
+      document.getElementById('scoreUploadBox').textContent = "📄 PDF: " + file.name;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const img = document.createElement('img');
+        img.id = 'scoreImg';
+        img.src = evt.target.result;
+        img.style.display = 'block';
+        img.style.maxWidth = '90%';
+        img.style.marginTop = '15px';
+        img.style.border = '2px solid var(--accent)';
+        img.style.boxShadow = 'var(--accent-glow)';
+        img.style.borderRadius = '8px';
+        display.appendChild(img);
+        document.getElementById('scoreUploadBox').textContent = "✅ " + file.name;
+      };
+      reader.readAsDataURL(file);
+    }
+    document.getElementById('scoreCtrlBar').style.display = 'flex';
+    document.getElementById('scoreUploadBox').style.display = 'none';
+  };
+
+  window.resetScore = () => {
+    document.getElementById('scoreDisplay').innerHTML = '';
+    document.getElementById('scoreUpload').value = '';
+    document.getElementById('scoreUploadBox').style.display = 'flex';
+    document.getElementById('scoreUploadBox').textContent = "📷 Upload Score (IMG/PDF)";
+    document.getElementById('scoreCtrlBar').style.display = 'none';
+  };
+
+  // ==========================================
+  // 2. LCD 顯示系統 (PROTECTED)
+  // ==========================================
+  window.triggerNote = (midi) => {
+    if (!aCtx) initApp();
+    playTone(midi, aCtx.currentTime);
+    const el = document.getElementById(`key-${midi}`);
+    if (el) {
+      el.classList.add('active');
+      setTimeout(() => el.classList.remove('active'), 150);
+    }
+    
+    currentlyPressedNotes.add(midi);
+    if (chordTimeout) clearTimeout(chordTimeout);
+    chordTimeout = setTimeout(() => {
+      if (!isAIProcessing) {
+        updateLCDDisplay();
+      }
+      currentlyPressedNotes.clear();
+    }, 100);
+  };
+
+  function updateLCDDisplay() {
+    const lcd = document.getElementById('noteOut');
+    if (currentlyPressedNotes.size === 0) return;
+    if (currentlyPressedNotes.size === 1) {
+      const midi = Array.from(currentlyPressedNotes)[0];
+      lcd.textContent = NOTES[midi % 12] + (Math.floor(midi / 12) - 1);
+    } else {
+      const sortedNotes = Array.from(currentlyPressedNotes).sort((a, b) => a - b);
+      lcd.textContent = detectChord(sortedNotes);
+    }
+  }
+
+  function detectChord(notes) {
+    const rootMidi = notes[0];
+    const rootName = NOTES[rootMidi % 12];
+    const intervals = notes.map(n => (n - rootMidi) % 12).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
+    const intervalStr = intervals.join(',');
+    const chordMap = {
+      '0,4,7': '', '0,3,7': 'm', '0,4,7,10': '7', '0,4,7,11': 'maj7', '0,3,7,10': 'm7',
+      '0,3,6': 'dim', '0,4,8': 'aug', '0,2,7': 'sus2', '0,5,7': 'sus4'
+    };
+    return chordMap[intervalStr] !== undefined ? rootName + chordMap[intervalStr] : notes.map(n => NOTES[n % 12]).join(' ');
+  }
+
+  function playTone(midi, time) {
+    const freq = 440 * Math.pow(2, (midi-69)/12);
+    const inst = document.getElementById('instSelect').value;
+    const sus = document.getElementById('sustainCheck').checked;
+    const g = aCtx.createGain(); g.connect(masterGain);
+    const o = aCtx.createOscillator();
+    o.type = {piano:'triangle', flute:'sine', violin:'sawtooth'}[inst] || 'square';
+    o.frequency.setValueAtTime(freq, time);
+    g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(0.5, time + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.01, time + (sus ? 2.5 : 0.5));
+    o.connect(g); o.start(time); o.stop(time + 3);
+  }
+
+  function initApp() {
+    if (aCtx) return;
+    aCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = aCtx.createGain(); masterGain.gain.value = 0.6;
+    reverbNode = aCtx.createConvolver(); createReverbImpulse();
+    masterGain.connect(aCtx.destination); masterGain.connect(reverbNode); reverbNode.connect(aCtx.destination);
+    initSunoAudio();
+    setupControls();
+    requestAnimationFrame(visualLoop);
+    checkServerStatus();
+  }
+
+  function setupControls() {
+    updateOctaveDisplay();
+    window.addEventListener('keydown', e => {
+      if(e.repeat) return;
+      const k = e.key.toLowerCase();
+      if(e.key === 'Shift') { document.getElementById('shiftIndicator').classList.add('active'); return; }
+      if (k >= '0' && k <= '8') { 
+          const oct = parseInt(k);
+          activeOctaves.has(oct) ? activeOctaves.delete(oct) : activeOctaves.add(oct);
+          highlightOctave(oct, activeOctaves.has(oct));
+          updateOctaveDisplay(); return;
+      }
+      if (LETTER_MAP.hasOwnProperty(k)) {
+        let offset = LETTER_MAP[k];
+        if(e.shiftKey && offset !== 4 && offset !== 11) offset += 1;
+        activeOctaves.forEach(oct => triggerNote((oct+1)*12 + offset));
+      }
+    });
+    window.addEventListener('keyup', e => { if(e.key === 'Shift') document.getElementById('shiftIndicator').classList.remove('active'); });
+    
+    document.getElementById('scoreUpload').addEventListener('change', window.loadScore);
+    document.getElementById('sunoUpload').addEventListener('change', handleSunoUpload);
+    document.getElementById('seekSlider').addEventListener('input', (e) => seekSuno(e.target.value));
+  }
+
+  function buildKeyboard() {
+    const wDiv = document.getElementById('whiteKeys'), bDiv = document.getElementById('blackKeys');
+    wDiv.innerHTML = ''; bDiv.innerHTML = '';
+    let wCount = 0;
+    for(let m=21; m<=108; m++) {
+      const name = NOTES[m%12], oct = Math.floor(m/12)-1, isB = name.includes('#');
+      const k = document.createElement('div');
+      k.id = `key-${m}`;
+      if(!isB) {
+        k.innerHTML = `<span class="key-tag">${name}${oct}</span>`;
+        k.className = 'key-white'; k.onmousedown = () => triggerNote(m);
+        k.ontouchstart = (e) => { e.preventDefault(); triggerNote(m); };
+        wDiv.appendChild(k); wCount++;
+      } else {
+        k.innerHTML = `<span class="key-tag">${name}${oct}</span>`;
+        k.className = 'key-black'; k.style.left = `${(wCount * 52) - 17}px`;
+        k.onmousedown = () => triggerNote(m); k.ontouchstart = (e) => { e.preventDefault(); triggerNote(m); };
+        bDiv.appendChild(k);
+      }
+    }
+  }
+
+  // ==========================================
+  // 3. Suno API 整合 (NEW!)
+ // ==========================================
+  // 3. 本地 Spleeter API 整合 (已修正為本地 5000 埠口)
+  // ==========================================
+  let tracks = { mix: null, voc: null, back: null };
+  let sources = { mix: null, voc: null, back: null };
+  let gains = { mix: null, voc: null, back: null };
+  let isSunoPlaying = false, sunoStartTime = 0, sunoPausedAt = 0, sunoDuration = 0, sunoMode = 'mix', progressReq;
+
+  // 🔥 處理本地上傳與分離
+  async function handleSunoUpload(e) {
+    if(!aCtx) initApp();
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const box = document.getElementById('sunoUploadBox');
+    const lcd = document.getElementById('noteOut');
+    box.classList.add('disabled');
+    box.textContent = "⏳ AI 分離中...";
+    isAIProcessing = true;
+    lcd.textContent = "🧠 Processing Stems...";
+    
+    try {
+      // 1. 先讀取原始混音
+      const arrayBuffer = await file.arrayBuffer();
+      tracks.mix = await aCtx.decodeAudioData(arrayBuffer);
+      sunoDuration = tracks.mix.duration;
+      
+      // 2. 傳送到妳本地的 Python
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) throw new Error('後端未啟動');
+      
+      // 3. 接收伴奏檔並載入
+      const blob = await response.blob();
+      const accBuffer = await blob.arrayBuffer();
+      tracks.back = await aCtx.decodeAudioData(accBuffer);
+      
+      // 4. 更新介面
+      box.style.display = 'none';
+      document.getElementById('sunoCtrlBar').style.display = 'flex';
+      document.getElementById('seekBarUi').classList.add('active');
+      document.getElementById('seekSlider').disabled = false;
+      document.getElementById('seekSlider').max = Math.floor(sunoDuration);
+      document.getElementById('tTotal').textContent = formatTime(sunoDuration);
+      
+      isAIProcessing = false;
+      lcd.textContent = "✅ Spleeter Ready!";
+    } catch (err) {
+      alert('❌ 請確認妳的 Python app.py 已經啟動！');
+      box.classList.remove('disabled');
+      box.textContent = "🎵 Suno AI Separate (Local)";
+      isAIProcessing = false;
+      lcd.textContent = "⚠️ Server Error";
+    }
+  }
+
+  // ==========================================
+  // 視覺渲染 (The Visualizer - PROTECTED)
+  // ==========================================
+  let activeGuidesVoc = new Map(), activeGuidesBack = new Map();
+  const GUIDE_SUSTAIN = 500;
+
+  function visualLoop() {
+    if(isSunoPlaying) {
+        if(tracks.voc && (sunoMode==='mix'||sunoMode==='voc')) analyzeTrack(analyserVoc, activeGuidesVoc);
+        if(tracks.back && (sunoMode==='mix'||sunoMode==='back')) analyzeTrack(analyserBack, activeGuidesBack);
+    }
+    const now = Date.now();
+    document.querySelectorAll('.guide-vocal, .guide-backing').forEach(el => { 
+      el.classList.remove('guide-vocal'); 
+      el.classList.remove('guide-backing'); 
+    });
+    activeGuidesVoc.forEach((t, m) => { 
+      if(now-t < GUIDE_SUSTAIN){ 
+        const el=document.getElementById(`key-${m}`); 
+        if(el) el.classList.add('guide-vocal'); 
+      } else activeGuidesVoc.delete(m); 
+    });
+    activeGuidesBack.forEach((t, m) => { 
+      if(now-t < GUIDE_SUSTAIN){ 
+        const el=document.getElementById(`key-${m}`); 
+        if(el) el.classList.add('guide-backing'); 
+      } else activeGuidesBack.delete(m); 
+    });
+    requestAnimationFrame(visualLoop);
+  }
+
+  function analyzeTrack(analyser, map) {
+    const buf = new Float32Array(analyser.fftSize); 
+    analyser.getFloatTimeDomainData(buf);
+    const freq = autoCorrelate(buf, aCtx.sampleRate);
+    if(freq > 0) {
+        const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+        if(midi >= 21 && midi <= 108) map.set(midi, Date.now());
+    }
+  }
+
+  function autoCorrelate(buf, sampleRate) {
+    let rms = 0; 
+    for(let i=0; i<buf.length; i++) rms += buf[i]*buf[i];
+    if(Math.sqrt(rms/buf.length) < 0.01) return -1;
+    let r1=0, r2=buf.length-1, thres=0.2;
+    for(let i=0; i<buf.length/2; i++) if(Math.abs(buf[i])<thres){r1=i; break;}
+    for(let i=1; i<buf.length/2; i++) if(Math.abs(buf[buf.length-i])<thres){r2=buf.length-i; break;}
+    let b = buf.slice(r1,r2);
+    let c = new Array(b.length).fill(0);
+    for(let i=0; i<b.length; i++) for(let j=0; j<b.length-i; j++) c[i] = c[i] + b[j]*b[j+i];
+    let d=0; 
+    while(c[d]>c[d+1]) d++;
+    let maxval=-1, maxpos=-1;
+    for(let i=d; i<b.length; i++) if(c[i]>maxval){ maxval=c[i]; maxpos=i; }
+    return sampleRate/maxpos;
+  }
+
+  // ==========================================
+  // Helpers (PRESERVED)
+  // ==========================================
+  window.selectTheme = (t) => { 
+    document.body.className = t + ' show-labels'; 
+    document.getElementById('themeModal').style.setProperty('display', 'none', 'important'); 
+    if(!aCtx) initApp(); 
+  };
+  
+  window.openThemeModal = () => { 
+    document.getElementById('themeModal').style.setProperty('display', 'flex', 'important'); 
+  };
+  
+  window.toggleScore = () => { 
+    const p = document.getElementById('scorePanel'); 
+    const isH = p.style.display === 'none'; 
+    document.getElementById('sunoPanel').style.display = 'none'; 
+    document.getElementById('sunoBtn').classList.remove('active'); 
+    if(isH){ 
+      p.style.display = 'flex'; 
+      document.getElementById('scoreBtn').classList.add('active'); 
+    } else { 
+      p.style.display = 'none'; 
+      document.getElementById('scoreBtn').classList.remove('active'); 
+    } 
+  };
+  
+  window.toggleSuno = () => { 
+    const p = document.getElementById('sunoPanel'); 
+    const isH = p.style.display === 'none'; 
+    document.getElementById('scorePanel').style.display = 'none'; 
+    document.getElementById('scoreBtn').classList.remove('active'); 
+    if(isH){ 
+      p.style.display = 'flex'; 
+      document.getElementById('sunoBtn').classList.add('active'); 
+    } else { 
+      p.style.display = 'none'; 
+      document.getElementById('sunoBtn').classList.remove('active'); 
+    } 
+  };
+  
+  window.toggleMetro = () => { 
+    metroOn = !metroOn; 
+    document.getElementById('metroBtn').classList.toggle('active'); 
+    if(metroOn){ 
+      metroTimer = setInterval(playClick, (60/bpm)*1000); 
+      playClick(); 
+    } else clearInterval(metroTimer); 
+  };
+  
+  function playClick() { 
+    const t=aCtx.currentTime, o=aCtx.createOscillator(), g=aCtx.createGain(); 
+    o.frequency.value=1000; 
+    g.gain.value=0.8; 
+    o.connect(g); 
+    g.connect(aCtx.destination); 
+    o.start(t); 
+    o.stop(t+0.08); 
+    document.getElementById('metroLight').classList.add('metro-flash'); 
+    setTimeout(()=>document.getElementById('metroLight').classList.remove('metro-flash'), 100); 
+  }
+  
+  window.updateBPM = (v) => { 
+    bpm = v; 
+    document.getElementById('bpmText').textContent = v + " BPM"; 
+    if(metroOn){ 
+      clearInterval(metroTimer); 
+      metroTimer = setInterval(playClick, (60/bpm)*1000); 
+    }
+  };
+  
+  window.setVol = (lv) => { 
+    masterGain.gain.setTargetAtTime({1:0.1, 2:0.35, 3:0.65, 4:1.0}[lv], aCtx.currentTime, 0.05); 
+    for(let i=1; i<=4; i++) document.getElementById(`vol${i}`).classList.toggle('active', i===lv); 
+  };
+  
+  window.toggleDisplay = () => { 
+    document.getElementById('kbRoot').classList.toggle('hide-tags'); 
+    document.getElementById('dToggle').classList.toggle('active'); 
+  };
+  
+  window.changeInstrument = () => { 
+    const v = document.getElementById('instSelect').value; 
+    document.getElementById('instIcon').textContent = {
+      piano:'🎹', 
+      strings:'🎻', 
+      violin:'🎻', 
+      flute:'🪈', 
+      guitar:'🎸'
+    }[v]; 
+  };
+  
+  function formatTime(sec) { 
+    const m = Math.floor(sec/60); 
+    const s = Math.floor(sec%60); 
+    return `${m}:${s<10?'0':''}${s}`; 
+  }
+  
+  function updateOctaveDisplay() { 
+    const s = Array.from(activeOctaves).sort(); 
+    document.getElementById('octaveDisplay').textContent = "OCT: " + (s.length ? s.join(', ') : "OFF"); 
+  }
+  
+  function highlightOctave(oct, active) { 
+    const s = (oct+1)*12; 
+    for (let m = s; m <= s+11; m++) { 
+      const k = document.getElementById(`key-${m}`); 
+      if(k) active ? k.classList.add('octave-active') : k.classList.remove('octave-active'); 
+    } 
+  }
+  
+  function createReverbImpulse() { 
+    const r=aCtx.sampleRate, l=r*2, i=aCtx.createBuffer(2,l,r); 
+    for(let j=0; j<l; j++){ 
+      const n=j/l, env=Math.pow(1-n,2); 
+      i.getChannelData(0)[j]=(Math.random()*2-1)*env; 
+      i.getChannelData(1)[j]=(Math.random()*2-1)*env; 
+    } 
+    reverbNode.buffer=i; 
+  }
+  
+  window.onload = () => { buildKeyboard(); };
+</script>
+</body>
+</html>
